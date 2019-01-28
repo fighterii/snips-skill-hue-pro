@@ -119,6 +119,8 @@ class Skill_Hue:
             intent_name = intent_name.split(":")[1]
         if intent_name == 'turnOn':
             self.queue.put(self.turn_on(hermes, intent_message, rooms))
+        if intent_name == 'turnOnLastState':
+            self.queue.put(self.turn_on(hermes, intent_message, rooms, last_state=True))
         if intent_name == 'turnOff':
             self.queue.put(self.turn_off(hermes, intent_message, rooms))
         if intent_name == 'setBrightness':
@@ -132,12 +134,12 @@ class Skill_Hue:
         if intent_name == 'shiftDown':
             self.queue.put(self.shift_down(hermes, intent_message, rooms))
 
-    def turn_on(self, hermes, intent_message, rooms):
+    def turn_on(self, hermes, intent_message, rooms, last_state=False):
         if len(rooms) > 0:
             for room in rooms:
-                self.snipshue.light_on(room.lower())
+                self.snipshue.light_on(room.lower(), last_state)
         else:
-            self.snipshue.light_on_all()
+            self.snipshue.light_on_all(last_state)
         self.terminate_feedback(hermes, intent_message)
 
     def turn_off(self, hermes, intent_message, rooms):

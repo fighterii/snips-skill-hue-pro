@@ -7,6 +7,7 @@ import time
 from hue_setup import HueSetup
 from hue_scene import HueScenes
 
+
 class SnipsHue:
     """ Philips Hue skill for Snips. """
 
@@ -17,13 +18,13 @@ class SnipsHue:
         :param username: Philips Hue username
         :param light_ids: Philips Hue light ids
         """
-        self.username  = username
-        self.hostname  = hostname
+        self.username = username
+        self.hostname = hostname
         if hostname is None or username is None:
             setup = HueSetup(hostname, username)
             url = setup.bridge_url
-            self.username  = setup.get_username()
-            self.hostname  = setup.get_bridge_ip()
+            self.username = setup.get_username()
+            self.hostname = setup.get_bridge_ip()
             print(setup.bridge_url)
             print str(url)
         else:
@@ -37,16 +38,21 @@ class SnipsHue:
         # from <room_name> -> <room_id>
         self.roomName_roomId = self._get_room_id_table()
 
-    #### section -> action handlers
-    def light_on(self, room):
+    # section -> action handlers
+    def light_on(self, room, last_state=False):
         if self.roomName_roomId.get(room) is None:
             return
         print ("[HUE] turn on")
-        self._put_group_state({"on": True, "bri": 200, "hue": 39392,"sat": 13}, self.roomName_roomId[room])
+        if last_state:
+            print ("[HUE] turn on preserving last state")
+            self._put_group_state({"on": True}, self.roomName_roomId[room])
+        else:
+            print ("[HUE] turn on")
+            self._put_group_state({"on": True, "bri": 200, "hue": 39392, "sat": 13}, self.roomName_roomId[room])
 
-    def light_on_all(self):
+    def light_on_all(self, last_state=False):
         for room in self.roomName_roomId.keys():
-            self.light_on(room)
+            self.light_on(room, last_state)
 
     def light_off(self, room):
         if self.roomName_roomId.get(room) is None:
@@ -63,12 +69,12 @@ class SnipsHue:
             return
         print ("[HUE] set brightness")
         """ Set a specified brightness [percent] to a hue light in [room] """
-        brightness = int(round(percent * 254/100))
+        brightness = int(round(percent * 254 / 100))
         self._put_group_state({"on": True, "bri": brightness}, self.roomName_roomId[room])
 
     def light_brightness_all(self, percent):
         for room in self.roomName_roomId.keys():
-           self.light_brightness(percent, room) 
+            self.light_brightness(percent, room)
 
     def light_color(self, color_code, room):
         if self.roomName_roomId.get(room) is None:
@@ -95,23 +101,23 @@ class SnipsHue:
         bri = int(scene_code.split('x')[0])
         hue = int(scene_code.split('x')[1])
         sat = int(scene_code.split('x')[2])
-        
-        self._put_group_state({"on": True, "bri":bri, "hue":hue, "sat":sat}, self.roomName_roomId[room])
+
+        self._put_group_state({"on": True, "bri": bri, "hue": hue, "sat": sat}, self.roomName_roomId[room])
 
     def light_scene_all(self, scene_code):
         for room in self.roomName_roomId.keys():
             self.light_scene(scene_code, room)
-    
+
     def light_up(self, percent, room):
         if self.roomName_roomId.get(room) is None:
             return
-        print ("[HUE] shift up, percent: "+ str(percent))
+        print ("[HUE] shift up, percent: " + str(percent))
 
         cur_brightness = self._get_group_brightness(self.roomName_roomId[room])
         print cur_brightness
         if cur_brightness is None:
             return
-        delt = int(round(percent * 254/100))
+        delt = int(round(percent * 254 / 100))
 
         new_bri = cur_brightness + delt
 
@@ -119,22 +125,22 @@ class SnipsHue:
             new_bri = 254
         if new_bri < 0:
             new_bri = 0
- 
+
         self._put_group_state({"on": True, "bri": new_bri}, self.roomName_roomId[room])
 
     def light_up_all(self, percent):
         for room in self.roomName_roomId.keys():
             self.light_up(percent, room)
-        
+
     def light_down(self, percent, room):
         if self.roomName_roomId.get(room) is None:
             return
-        print ("[HUE] shift down, percent: "+ str(percent))
+        print ("[HUE] shift down, percent: " + str(percent))
 
         cur_brightness = self._get_group_brightness(self.roomName_roomId[room])
         if cur_brightness is None:
             return
-        delt = int(round(percent * 254/100))
+        delt = int(round(percent * 254 / 100))
 
         new_bri = cur_brightness - delt
 
@@ -142,16 +148,16 @@ class SnipsHue:
             new_bri = 254
         if new_bri < 0:
             new_bri = 0
- 
+
         self._put_group_state({"on": True, "bri": new_bri}, self.roomName_roomId[room])
 
     def light_down_all(self, percent):
         for room in self.roomName_roomId.keys():
             self.light_down(percent, room)
 
-    #### section -> send command to device
+    # section -> send command to device
     def _put_group_state(self, payload, group_id):
-        print("[HUE] Setting for group "+ str(group_id) + ": " + str(payload))
+        print("[HUE] Setting for group " + str(group_id) + ": " + str(payload))
 
         try:
             url = "{}/{}/action".format(self.groups_endpoint, group_id)
@@ -162,7 +168,7 @@ class SnipsHue:
             print("[HUE] Request timeout. Is the Hue Bridge reachable?")
             pass
 
-    #### section -> get different info
+    # section -> get different info
     def _get_group_status(self, group_id):
         try:
             url = "{}/{}/".format(self.groups_endpoint, group_id)
@@ -172,12 +178,14 @@ class SnipsHue:
             print(e)
             print("[HUE] Request timeout. Is the Hue Bridge reachable?")
             pass
+
     def _get_group_brightness(self, group_id):
         status = self._get_group_status(group_id)
         if status["action"].get("bri"):
             return status["action"]["bri"]
         else:
             return None
+
     def _is_group_on(self, group_id):
         status = self._get_group_status(group_id)
 
@@ -185,6 +193,7 @@ class SnipsHue:
             return True
         else:
             return False
+
     def _get_room_id_table(self):
         groups = requests.get(self.groups_endpoint).json()
         room_id_table = {}
