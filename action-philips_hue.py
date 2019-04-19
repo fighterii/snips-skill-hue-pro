@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from hermes_python.hermes import Hermes
@@ -7,7 +7,7 @@ import os
 from snipshue.snipshue import SnipsHue
 from snipshelpers.thread_handler import ThreadHandler
 from snipshelpers.config_parser import SnipsConfigParser
-import Queue
+import queue
 
 CONFIGURATION_ENCODING_FORMAT = "utf-8"
 
@@ -56,7 +56,7 @@ class Skill_Hue:
         hostname = self.snipshue.hostname
         code = self.snipshue.username
         self.update_config(CACHE_INI, config, hostname, code)
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.thread_handler = ThreadHandler()
         self.thread_handler.run(target=self.start_blocking)
         self.thread_handler.start_run_loop()
@@ -74,7 +74,7 @@ class Skill_Hue:
         while run_event.is_set():
             try:
                 self.queue.get(False)
-            except Queue.Empty:
+            except queue.Empty:
                 with Hermes(MQTT_ADDR) as h:
                     h.subscribe_intents(self.callback).start()
 
@@ -83,7 +83,7 @@ class Skill_Hue:
         house_rooms = []
         if intent_message.slots.house_room:
             for room in intent_message.slots.house_room.all():
-                print type(room.value)
+                print(type(room.value))
                 house_rooms.append(room.value)
         return house_rooms
 

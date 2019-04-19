@@ -3,9 +3,8 @@
 
 import requests
 import json
-import time
-from hue_setup import HueSetup
-from hue_scene import HueScenes
+from .hue_setup import HueSetup
+from .hue_scene import HueScenes
 
 
 class SnipsHue:
@@ -25,8 +24,8 @@ class SnipsHue:
             url = setup.bridge_url
             self.username = setup.get_username()
             self.hostname = setup.get_bridge_ip()
-            print(setup.bridge_url)
-            print str(url)
+            print((setup.bridge_url))
+            print(str(url))
         else:
             url = 'http://{}/api/{}'.format(hostname, username)
 
@@ -51,7 +50,7 @@ class SnipsHue:
             self._put_group_state({"on": True, "bri": 200, "hue": 39392, "sat": 13}, self.roomName_roomId[room])
 
     def light_on_all(self, last_state=False):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_on(room, last_state)
 
     def light_off(self, room):
@@ -61,7 +60,7 @@ class SnipsHue:
         self._put_group_state({"on": False}, self.roomName_roomId[room])
 
     def light_off_all(self):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_off(room)
 
     def light_brightness(self, percent, room):
@@ -73,7 +72,7 @@ class SnipsHue:
         self._put_group_state({"on": True, "bri": brightness}, self.roomName_roomId[room])
 
     def light_brightness_all(self, percent):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_brightness(percent, room)
 
     def light_color(self, color_code, room):
@@ -90,7 +89,7 @@ class SnipsHue:
             self._put_group_state({"on": True, "bri": 200, "sat": sat, "hue": hue}, group_id)
 
     def light_color_all(self, color_code):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_color(color_code, room)
 
     def light_scene(self, scene_code, room):
@@ -105,16 +104,16 @@ class SnipsHue:
         self._put_group_state({"on": True, "bri": bri, "hue": hue, "sat": sat}, self.roomName_roomId[room])
 
     def light_scene_all(self, scene_code):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_scene(scene_code, room)
 
     def light_up(self, percent, room):
         if self.roomName_roomId.get(room) is None:
             return
-        print ("[HUE] shift up, percent: " + str(percent))
+        print(("[HUE] shift up, percent: " + str(percent)))
 
         cur_brightness = self._get_group_brightness(self.roomName_roomId[room])
-        print cur_brightness
+        print(cur_brightness)
         if cur_brightness is None:
             return
         delt = int(round(percent * 254 / 100))
@@ -129,13 +128,13 @@ class SnipsHue:
         self._put_group_state({"on": True, "bri": new_bri}, self.roomName_roomId[room])
 
     def light_up_all(self, percent):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_up(percent, room)
 
     def light_down(self, percent, room):
         if self.roomName_roomId.get(room) is None:
             return
-        print ("[HUE] shift down, percent: " + str(percent))
+        print(("[HUE] shift down, percent: " + str(percent)))
 
         cur_brightness = self._get_group_brightness(self.roomName_roomId[room])
         if cur_brightness is None:
@@ -152,17 +151,17 @@ class SnipsHue:
         self._put_group_state({"on": True, "bri": new_bri}, self.roomName_roomId[room])
 
     def light_down_all(self, percent):
-        for room in self.roomName_roomId.keys():
+        for room in list(self.roomName_roomId.keys()):
             self.light_down(percent, room)
 
     # section -> send command to device
     def _put_group_state(self, payload, group_id):
-        print("[HUE] Setting for group " + str(group_id) + ": " + str(payload))
+        print(("[HUE] Setting for group " + str(group_id) + ": " + str(payload)))
 
         try:
             url = "{}/{}/action".format(self.groups_endpoint, group_id)
             res = requests.put(url, data=json.dumps(payload), headers=None)
-            print(res.text)
+            print((res.text))
         except Exception as e:
             print(e)
             print("[HUE] Request timeout. Is the Hue Bridge reachable?")
@@ -197,12 +196,12 @@ class SnipsHue:
     def _get_room_id_table(self):
         groups = requests.get(self.groups_endpoint).json()
         room_id_table = {}
-        for key, value in groups.iteritems():
+        for key, value in groups.items():
             group = value
             if group.get("class") is not None:
                 room_id_table[str.lower(str(group["class"]))] = str(key)
             if group.get("name") is not None:
                 room_id_table[str.lower(str(group["name"].encode('utf-8')))] = str(key)
                 # colletc room name, nlu injection
-        print "[HUE] Available rooms: \n" + ("\n".join(room_id_table.keys()))
+        print("[HUE] Available rooms: \n" + ("\n".join(list(room_id_table.keys()))))
         return room_id_table

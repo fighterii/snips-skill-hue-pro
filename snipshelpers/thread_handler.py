@@ -4,7 +4,7 @@
 import threading
 import time
 
-from singleton import Singleton
+from .singleton import Singleton
 
 
 class ThreadHandler(Singleton):
@@ -46,4 +46,3 @@ class ThreadHandler(Singleton):
 
         for thread in self.thread_pool:
             thread.join()
-

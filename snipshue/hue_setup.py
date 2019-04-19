@@ -1,11 +1,11 @@
 # -*-: coding utf-8 -*-
 """ Philips Hue skill for Snips. """
 
-import requests
 import json
 import os
-import errno
 import sys
+
+import requests
 
 cache_file_name = 'credentials.json'
 
@@ -43,7 +43,7 @@ class HueSetup:
         resource = {'which':'system'}
         response = requests.get(self._create_url(bridge_ip, username)).json()
         if 'lights' in response:
-            print 'Connected to the Hub'
+            print('Connected to the Hub')
             is_connected = True
         elif 'error' in response[0]:
             error = response[0]['error']
@@ -53,18 +53,18 @@ class HueSetup:
 
     def _connect_user(self, bridge_ip):
         created = False
-        print '[!] Please, press the button on the Hue bridge'
+        print('[!] Please, press the button on the Hue bridge')
         while not created:
             payload = json.dumps({'devicetype': 'snipshue'})
             response = requests.post("http://" + bridge_ip + "/api", data=payload).json()
             if 'error' in response[0]:
                 if response[0]['error']['type'] != 101:
-                    print 'Unhandled error creating configuration on the Hue'
+                    print('Unhandled error creating configuration on the Hue')
                     sys.exit(response)
             else:
                 username = response[0]['success']['username']
                 created = True
-        print 'User connected'
+        print('User connected')
         return (username)
 
     def _create_url(self, bridge_ip, username):
